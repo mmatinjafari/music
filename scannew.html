@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scan New Music</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-base: #000000;
+        --bg-highlight: #121212;
+        --bg-surface: #181818;
+        --bg-surface-elevated: #282828;
+        --text-primary: #ffffff;
+        --text-secondary: #a7a7a7;
+        --accent: #1db954;
+        --accent-hover: #1ed760;
+        --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: var(--font-family);
+        background: var(--bg-base);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .scan-page {
+        width: 100%;
+        max-width: 560px;
+        padding: 32px 24px;
+      }
+
+      /* Header */
+      .scan-header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .scan-header .logo {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        background: linear-gradient(135deg, var(--accent), #1ed760);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(29, 185, 84, 0.3);
+      }
+
+      .scan-header .logo svg {
+        width: 32px;
+        height: 32px;
+        fill: #000;
+      }
+
+      .scan-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+      }
+
+      .scan-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* Scan Card */
+      .scan-card {
+        background: var(--bg-highlight);
+        border-radius: 12px;
+        padding: 28px;
+        margin-bottom: 24px;
+      }
+
+      /* Button */
+      .scan-btn {
+        width: 100%;
+        padding: 16px 24px;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 500px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.5px;
+      }
+
+      .scan-btn:hover:not(:disabled) {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+        box-shadow: 0 4px 20px rgba(29, 185, 84, 0.4);
+      }
+
+      .scan-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Status */
+      .scan-status {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        min-height: 20px;
+      }
+
+      /* Progress Section */
+      .progress-section {
+        display: none;
+        margin-top: 24px;
+      }
+
+      .progress-section.active {
+        display: block;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .progress-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .progress-label .spin-icon {
+        width: 20px;
+        height: 20px;
+        animation: spin 1.2s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .progress-stats {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 6px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 6px;
+        background: linear-gradient(90deg, var(--accent), #1ed760, var(--accent));
+        background-size: 200% 100%;
+        animation: shimmer 2s ease-in-out infinite;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 0% 0; }
+        50% { background-position: 100% 0; }
+        100% { background-position: 0% 0; }
+      }
+
+      /* Live Stats Cards */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .stat-card {
+        background: var(--bg-surface);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+      }
+
+      .stat-card .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+
+      .stat-card .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+
+      /* Complete state */
+      .progress-fill.complete {
+        background: var(--accent);
+        animation: none;
+      }
+
+      .complete-message {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+        padding: 16px;
+        background: rgba(29, 185, 84, 0.1);
+        border: 1px solid rgba(29, 185, 84, 0.2);
+        border-radius: 8px;
+      }
+
+      .complete-message.show {
+        display: block;
+      }
+
+      .complete-message svg {
+        width: 32px;
+        height: 32px;
+        fill: var(--accent);
+        margin-bottom: 8px;
+      }
+
+      .complete-message h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .complete-message p {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 24px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: color 0.2s;
+      }
+
+      .back-link:hover {
+        color: var(--text-primary);
+      }
+
+      /* Log area */
+      .log-area {
+        margin-top: 20px;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 12px;
+        color: var(--text-secondary);
+        background: var(--bg-surface);
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        display: none;
+      }
+
+      .log-area.active {
+        display: block;
+      }
+
+      .log-area .log-line {
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+      }
+
+      .log-area .log-line:last-child {
+        border-bottom: none;
+      }
+
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 2000;
+      }
+
+      .toast {
+        background: var(--bg-surface-elevated);
+        color: var(--text-primary);
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        border-left: 4px solid var(--accent);
+        font-size: 14px;
+        font-weight: 500;
+        animation: slideIn 0.3s ease forwards;
+      }
+
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      .toast.fade-out {
+        animation: fadeOut 0.5s ease forwards;
+      }
+
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; transform: translateY(-20px); }
+      }
+
+      @media (max-width: 600px) {
+        .scan-page { padding: 24px 16px; }
+        .scan-header h1 { font-size: 24px; }
+        .stat-card .stat-value { font-size: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scan-page">
+      <div class="scan-header">
+        <div class="logo">
+          <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        </div>
+        <h1>Scan New Music</h1>
+        <p>Crawl the music server and discover new tracks to add to your library.</p>
+      </div>
+
+      <div class="scan-card">
+        <button id="scan-btn" class="scan-btn">Start Scanning</button>
+        <div id="scan-status" class="scan-status"></div>
+
+        <div id="progress-section" class="progress-section">
+          <div class="progress-header">
+            <div class="progress-label">
+              <svg viewBox="0 0 24 24" class="spin-icon"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+              <span id="progress-text">Initializing...</span>
+            </div>
+            <span id="progress-stats" class="progress-stats"></span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="folders-count">0</div>
+              <div class="stat-label">Folders</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="songs-count">0</div>
+              <div class="stat-label">Songs</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="complete-msg" class="complete-message">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <h3>Scan Complete!</h3>
+          <p id="complete-text">Found 0 songs total.</p>
+        </div>
+
+        <div id="log-area" class="log-area"></div>
+      </div>
+
+      <a href="/" class="back-link">← Back to Player</a>
+    </div>
+
+    <script>
+      const scanBtn = document.getElementById('scan-btn');
+      const scanStatus = document.getElementById('scan-status');
+      const progressSection = document.getElementById('progress-section');
+      const progressText = document.getElementById('progress-text');
+      const progressStats = document.getElementById('progress-stats');
+      const progressFill = document.getElementById('progress-fill');
+      const foldersCount = document.getElementById('folders-count');
+      const songsCount = document.getElementById('songs-count');
+      const completeMsg = document.getElementById('complete-msg');
+      const completeText = document.getElementById('complete-text');
+      const logArea = document.getElementById('log-area');
+
+      let isScanning = false;
+      let prevSongs = 0;
+      let prevFolders = 0;
+
+      // Check if already scanning on page load
+      checkStatus();
+
+      async function checkStatus() {
+        try {
+          const res = await fetch('/api/status');
+          const s = await res.json();
+          if (s.is_crawling) {
+            isScanning = true;
+            scanBtn.disabled = true;
+            scanBtn.innerText = 'Scanning...';
+            progressSection.classList.add('active');
+            updateProgress(s.folders_scanned, s.songs_found);
+            poll();
+          } else {
+            const last = localStorage.getItem('last_scan_time');
+            scanStatus.innerText = last ? `Last scan: ${last}` : 'Ready to scan';
+          }
+        } catch(e) {
+          scanStatus.innerText = 'Could not reach server';
+        }
+      }
+
+      scanBtn.addEventListener('click', startScan);
+
+      async function startScan() {
+        if (isScanning) return;
+
+        isScanning = true;
+        scanBtn.disabled = true;
+        scanBtn.innerText = 'Scanning...';
+        scanStatus.innerText = '';
+        completeMsg.classList.remove('show');
+        progressSection.classList.add('active');
+        logArea.classList.add('active');
+        logArea.innerHTML = '';
+        progressFill.classList.remove('complete');
+        updateProgress(0, 0);
+
+        addLog('Starting scan...');
+
+        try {
+          const res = await fetch('/api/scan', { method: 'POST' });
+          const result = await res.json();
+
+          if (res.status === 202) {
+            addLog('Scan started on server.');
+            showToast('Scan started!');
+            poll();
+          } else if (res.status === 400) {
+            addLog('Server: ' + result.message);
+            showToast(result.message);
+            poll(); // already scanning, just poll
+          } else {
+            addLog('Error: ' + (result.message || 'Unknown'));
+            resetUI();
+          }
+        } catch(e) {
+          addLog('Connection error: ' + e.message);
+          showToast('Could not connect to server.');
+          resetUI();
+        }
+      }
+
+      async function poll() {
+        try {
+          const res = await fetch('/api/status');
+          const s = await res.json();
+
+          if (s.is_crawling) {
+            updateProgress(s.folders_scanned, s.songs_found);
+            setTimeout(poll, 2000);
+          } else {
+            // Done!
+            finishScan(s.songs_found);
+          }
+        } catch(e) {
+          addLog('Polling error, retrying...');
+          setTimeout(poll, 4000);
+        }
+      }
+
+      function updateProgress(folders, songs) {
+        foldersCount.innerText = folders;
+        songsCount.innerText = songs;
+
+        if (folders !== prevFolders || songs !== prevSongs) {
+          if (songs > prevSongs) {
+            addLog(`+${songs - prevSongs} songs discovered (${songs} total)`);
+          } else if (folders > prevFolders) {
+            addLog(`Scanning... ${folders} folders explored`);
+          }
+          prevFolders = folders;
+          prevSongs = songs;
+        }
+
+        progressText.innerText = folders === 0 ? 'Initializing...' : 'Scanning directories...';
+        progressStats.innerText = `${folders} folders · ${songs} songs`;
+
+        // Log-based progress since we don't know total
+        const pct = folders > 0 ? Math.min(92, Math.log(folders + 1) * 12) : 2;
+        progressFill.style.width = pct + '%';
+      }
+
+      function finishScan(totalSongs) {
+        isScanning = false;
+        scanBtn.disabled = false;
+        scanBtn.innerText = 'Start Scanning';
+
+        progressFill.style.width = '100%';
+        progressFill.classList.add('complete');
+        progressText.innerText = 'Complete!';
+
+        // Hide spinner
+        const spinner = progressSection.querySelector('.spin-icon');
+        if (spinner) spinner.style.animation = 'none';
+
+        completeText.innerText = `Found ${totalSongs} songs total.`;
+        completeMsg.classList.add('show');
+
+        const now = new Date().toLocaleString();
+        localStorage.setItem('last_scan_time', now);
+        scanStatus.innerText = `Last scan: ${now}`;
+
+        addLog(`✓ Scan complete! ${totalSongs} songs in library.`);
+        showToast(`Scan complete! ${totalSongs} songs found.`);
+      }
+
+      function resetUI() {
+        isScanning = false;
+        scanBtn.disabled = false;
+        scanBtn.innerText = 'Start Scanning';
+        progressSection.classList.remove('active');
+        const last = localStorage.getItem('last_scan_time');
+        scanStatus.innerText = last ? `Last scan: ${last}` : 'Ready to scan';
+      }
+
+      function addLog(msg) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        const time = new Date().toLocaleTimeString();
+        line.textContent = `[${time}] ${msg}`;
+        logArea.appendChild(line);
+        logArea.scrollTop = logArea.scrollHeight;
+      }
+
+      function showToast(message) {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'toast-container';
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerText = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.classList.add('fade-out');
+          setTimeout(() => toast.remove(), 500);
+        }, 4000);
+      }
+    </script>
+  </body>
+</html>

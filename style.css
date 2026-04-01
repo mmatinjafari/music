@@ -281,6 +281,69 @@ body {
   cursor: not-allowed;
 }
 
+/* Scan Progress Bar */
+.scan-progress-container {
+  padding: 12px 24px 0;
+}
+
+.scan-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.scan-progress-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.scan-icon {
+  width: 18px;
+  height: 18px;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.scan-progress-stats {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.scan-progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.scan-progress-fill {
+  height: 100%;
+  width: 2%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), #1ed760, var(--accent));
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+
 .view-header {
     padding: 24px 24px 16px;
 }
@@ -907,4 +970,41 @@ body {
     .mobile-nav {
         display: none;
     }
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    bottom: 110px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2000;
+}
+
+.toast {
+    background-color: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border-left: 4px solid var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.toast.fade-out {
+    animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-20px); }
 }

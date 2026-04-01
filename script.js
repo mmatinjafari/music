@@ -1,12 +1,7 @@
 const MUSIC_SERVER = "https://dl2.mokhtalefmusic.com/Music/";
-const PROXY_URL = "https://api.allorigins.win/get?url=";
 
-let allMusicData = JSON.parse(localStorage.getItem('music_data') || "{}");
-let crawlStatus = {
-    is_crawling: false,
-    folders_scanned: 0,
-    songs_found: 0
-};
+
+let allMusicData = {};
 
 // DOM Elements
 const navHome = document.getElementById("nav-home");
@@ -16,8 +11,7 @@ const searchInput = document.getElementById("search-input");
 const viewTitle = document.getElementById("view-title");
 const songListEl = document.getElementById("song-list");
 const artistListEl = document.getElementById("artist-list");
-const statusBadge = document.getElementById("status-badge");
-const scanBtn = document.getElementById("scan-btn");
+
 
 // Player DOM Elements
 const audioPlayer = document.getElementById("audio-player");
@@ -82,14 +76,10 @@ if(installAppBtn) {
 
 // Initialize
 function init() {
-    setupUI();
-    renderArtistList();
-    renderHome();
-    
-    if (Object.keys(allMusicData).length === 0) {
-        viewTitle.innerText = "Welcome! Click Scan to start.";
-    }
+    loadMusicData();
 }
+
+init();
 
 // UI setup
 function setupUI() {
@@ -98,50 +88,38 @@ function setupUI() {
 }
 
 // Client-side Crawler
-async function startClientScan() {
-    if (crawlStatus.is_crawling) return;
-    
-    crawlStatus.is_crawling = true;
-    crawlStatus.folders_scanned = 0;
-    crawlStatus.songs_found = sumSongs();
-    updateStatusUI();
-    
-    scanBtn.disabled = true;
-    scanBtn.innerText = "Scanning...";
-
+async function loadMusicData() {
     try {
-        await crawlDirectory(MUSIC_SERVER);
-    } catch (error) {
-        console.error("Crawl error:", error);
-    } finally {
-        crawlStatus.is_crawling = false;
-        scanBtn.disabled = false;
-        scanBtn.innerText = "Scan New Music";
-        updateStatusUI();
-        localStorage.setItem('music_data', JSON.stringify(allMusicData));
-        renderArtistList();
-        if (currentView === 'home') renderHome();
+        const res = await fetch('./music_data.json');
+        if (res.ok) {
+            allMusicData = await res.json();
+            renderArtistList();
+            renderHome();
+        }
+    } catch (e) {
+        console.log("No existing music data found.");
     }
 }
 
-function sumSongs() {
-    return Object.values(allMusicData).reduce((sum, songs) => sum + songs.length, 0);
-}
 
-function updateStatusUI() {
-    if (crawlStatus.is_crawling) {
-        statusBadge.innerText = `Scanning: ${crawlStatus.songs_found} songs found`;
-        statusBadge.style.color = "var(--accent)";
-    } else {
-        statusBadge.innerText = `${sumSongs()} songs`;
-        statusBadge.style.color = "var(--text-secondary)";
+
+function showToast(message) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
     }
-}
-
-async function fetchWithProxy(url) {
-    const res = await fetch(`${PROXY_URL}${encodeURIComponent(url)}`);
-    const data = await res.json();
-    return data.contents;
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerText = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
 }
 
 function parseFilename(filename) {
@@ -158,58 +136,9 @@ function parseFilename(filename) {
     return { artist: "Unknown Artist", title: cleanName.trim() };
 }
 
-async function crawlDirectory(url) {
-    crawlStatus.folders_scanned++;
-    updateStatusUI();
-    
-    try {
-        const html = await fetchWithProxy(url);
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const links = Array.from(doc.querySelectorAll('a'))
-            .map(a => a.getAttribute('href'))
-            .filter(href => href && href !== '../');
 
-        const covers = {};
-        for (const link of links) {
-            if (link.match(/\.(webp|jpg|jpeg|png)$/i)) {
-                const { artist, title } = parseFilename(link);
-                covers[`${artist}-${title}`] = new URL(link, url).href;
-            }
-        }
 
-        for (const link of links) {
-            const fullUrl = new URL(link, url).href;
-            
-            if (link.endsWith('/')) {
-                await crawlDirectory(fullUrl);
-            } else if (link.toLowerCase().endsWith('.mp3')) {
-                const { artist, title } = parseFilename(link);
-                const cover_url = covers[`${artist}-${title}`] || "";
-                
-                if (!allMusicData[artist]) allMusicData[artist] = [];
-                
-                const exists = allMusicData[artist].some(s => s.title === title);
-                if (!exists) {
-                    allMusicData[artist].push({ title, url: fullUrl, cover_url });
-                    crawlStatus.songs_found++;
-                    updateStatusUI();
-                } else if (cover_url) {
-                    const song = allMusicData[artist].find(s => s.title === title);
-                    if (!song.cover_url) song.cover_url = cover_url;
-                }
-            }
-        }
-    } catch (e) {
-        console.error("Directory crawl failed:", url, e);
-    }
-}
 
-// Scan Action
-if(scanBtn) {
-    scanBtn.addEventListener("click", startClientScan);
-}
-
-// Navigation Events
 navHome.addEventListener('click', () => {
     currentView = 'home';
     selectedArtist = null;
@@ -642,7 +571,7 @@ btnMute.addEventListener('click', () => {
     }
 });
 
-init();
+// init() is already called on line 101 — no duplicate call needed
 
 // Additional CSS for mobile library icons
 const style = document.createElement('style');
