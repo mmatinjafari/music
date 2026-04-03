@@ -54,8 +54,17 @@ def save_to_json():
         dir_name = os.path.dirname(os.path.abspath(DATA_FILE)) or "."
         fd, temp_path = tempfile.mkstemp(dir=dir_name, prefix='.music_tmp_')
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            json.dump(music_data, f, ensure_ascii=False, indent=2)
+            json_str = json.dumps(music_data, ensure_ascii=False, indent=2)
+            f.write(json_str)
         os.replace(temp_path, DATA_FILE)
+        
+        # Also create a gzipped version for extremely fast mobile transfer (23MB -> 2MB)
+        import gzip
+        gz_fd, gz_temp_path = tempfile.mkstemp(dir=dir_name, prefix='.music_gz_')
+        with os.fdopen(gz_fd, 'wb') as gf:
+            gf.write(gzip.compress(json_str.encode('utf-8')))
+        os.replace(gz_temp_path, DATA_FILE + '.gz')
+        
     except Exception as e:
         print(f"Save error: {e}")
 
@@ -235,6 +244,22 @@ def trigger_scan():
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
+
+@app.route('/music_data.json')
+def serve_compressed_music_data():
+    if 'gzip' in request.headers.get('Accept-Encoding', '').lower():
+        if os.path.exists(DATA_FILE + '.gz'):
+            with open(DATA_FILE + '.gz', 'rb') as f:
+                data = f.read()
+            resp = Response(data)
+            resp.headers['Content-Encoding'] = 'gzip'
+            resp.headers['Content-Type'] = 'application/json'
+            resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            return resp
+            
+    resp = send_from_directory('.', DATA_FILE)
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
 
 @app.route('/scannew')
 def scannew():
